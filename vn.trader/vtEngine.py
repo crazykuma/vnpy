@@ -62,6 +62,13 @@ class MainEngine(object):
             print e
         
         try:
+            from xtpGateway.xtpGateway import XtpGateway
+            self.addGateway(XtpGateway, 'XTP')
+            self.gatewayDict['XTP'].setQryEnabled(True)
+        except Exception, e:
+            print e        
+        
+        try:
             from ksotpGateway.ksotpGateway import KsotpGateway
             self.addGateway(KsotpGateway, 'KSOTP')
             self.gatewayDict['KSOTP'].setQryEnabled(True)
@@ -107,6 +114,13 @@ class MainEngine(object):
             self.addGateway(IbGateway, 'IB')
         except Exception, e:
             print e
+            
+        try:
+            from shzdGateway.shzdGateway import ShzdGateway
+            self.addGateway(ShzdGateway, 'SHZD')
+            self.gatewayDict['SHZD'].setQryEnabled(True)
+        except Exception, e:
+            print e       
             
         try:
             from oandaGateway.oandaGateway import OandaGateway
@@ -219,7 +233,7 @@ class MainEngine(object):
                 
             try:
                 # 设置MongoDB操作的超时时间为0.5秒
-                self.dbClient = MongoClient(host, port, serverSelectionTimeoutMS=500)
+                self.dbClient = MongoClient(host, port, connectTimeoutMS=500)
                 
                 # 调用server_info查询服务器状态，防止服务器异常并未连接成功
                 self.dbClient.server_info()
@@ -234,7 +248,7 @@ class MainEngine(object):
         if self.dbClient:
             db = self.dbClient[dbName]
             collection = db[collectionName]
-            collection.insert(d)
+            collection.insert_one(d)
     
     #----------------------------------------------------------------------
     def dbQuery(self, dbName, collectionName, d):
@@ -246,6 +260,14 @@ class MainEngine(object):
             return cursor
         else:
             return None
+        
+    #----------------------------------------------------------------------
+    def dbUpdate(self, dbName, collectionName, d, flt, upsert=False):
+        """向MongoDB中更新数据，d是具体数据，flt是过滤条件，upsert代表若无是否要插入"""
+        if self.dbClient:
+            db = self.dbClient[dbName]
+            collection = db[collectionName]
+            collection.replace_one(flt, d, upsert)
     
     #----------------------------------------------------------------------
     def getContract(self, vtSymbol):
